@@ -2688,7 +2688,30 @@ class core_renderer extends renderer_base {
 
         // Get the image html output first, auto generated based on initials if one isn't already set.
         if ($user->picture == 0 && empty($CFG->enablegravatar) && !defined('BEHAT_SITE_RUNNING')) {
-            $output = html_writer::tag('span', mb_substr($user->firstname, 0, 1) . mb_substr($user->lastname, 0, 1),
+            $firstnamefirst = mb_substr($user->firstname, 0, 1);
+            $lastnamefirst = mb_substr($user->lastname, 0, 1);
+            $fullnamedisplay = $CFG->fullnamedisplay;
+            if ($CFG->fullnamedisplay === 'language') {
+                $fullnamedisplay = get_string('fullnamedisplay', '', (object) [
+                    'firstname' => 'firstname',
+                    'lastname' => 'lastname'
+                ]);
+            }
+            $firstnameposition = mb_strpos($fullnamedisplay, 'firstname');
+            $lastnameposition = mb_strpos($fullnamedisplay, 'lastname');
+            $initials = $firstnamefirst . $lastnamefirst;
+            if ($firstnameposition !== false && $lastnameposition !== false) {
+                if ($lastnameposition < $firstnameposition) {
+                    $initials = $lastnamefirst . $firstnamefirst;
+                }
+                // Don't modify if the firstname is first.
+            } else if ($firstnameposition !== false) {
+                $initials = $firstnamefirst;
+            } else if ($lastnameposition !== false) {
+                $initials = $lastnamefirst;
+            }
+            // Don't modify in corner cases where neither the firstname nor the lastname appears.
+            $output = html_writer::tag('span', $initials,
                 ['class' => 'userinitials size-' . $size]);
         } else {
             $output = html_writer::empty_tag('img', $attributes);
