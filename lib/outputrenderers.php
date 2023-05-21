@@ -2710,8 +2710,29 @@ class core_renderer extends renderer_base {
 
         // Get the image html output first, auto generated based on initials if one isn't already set.
         if ($user->picture == 0 && empty($CFG->enablegravatar) && !defined('BEHAT_SITE_RUNNING')) {
-            $output = html_writer::tag('span', mb_substr($user->firstname, 0, 1) . mb_substr($user->lastname, 0, 1),
-                ['class' => 'userinitials size-' . $size]);
+            if (has_capability('moodle/site:viewfullnames', $this->page->context)) {
+                $nameformat = $CFG->alternativefullnameformat;
+            } else {
+                $nameformat = $CFG->fullnamedisplay;
+            }
+            if ($nameformat === 'language') {
+                $nameformat = get_string(
+                    'fullnamedisplay',
+                    '',
+                    (object) ['firstname' => 'firstname', 'lastname' => 'lastname']
+                );
+            }
+            // Fetch all the available user name fields.
+            $availablefields = order_in_string(\core_user\fields::get_name_fields(), $nameformat);
+            $initials = '';
+            foreach ($availablefields as $userfieldname) {
+                $initials .= mb_substr($user->$userfieldname, 0, 1);
+            }
+            // Don't modify in corner cases where neither the firstname nor the lastname appears.
+            $output = html_writer::tag(
+                'span', $initials,
+                ['class' => 'userinitials size-' . $size]
+            );
         } else {
             $output = html_writer::empty_tag('img', $attributes);
         }
