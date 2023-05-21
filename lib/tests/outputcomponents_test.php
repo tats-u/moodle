@@ -17,6 +17,7 @@
 namespace core;
 
 use block_contents;
+use core_analytics\user;
 use custom_menu;
 use custom_menu_item;
 use paging_bar;
@@ -322,6 +323,66 @@ class outputcomponents_test extends \advanced_testcase {
 
         $up3 = new user_picture($user3);
         $this->assertSame($CFG->wwwroot.'/theme/image.php?theme=classic&component=core&rev=1&image=u%2Ff2', $up3->get_url($page, $renderer)->out(false));
+    }
+
+    /**
+     * Test that user with Letter avatar respect language preference.
+     *
+     * @param array $userdata
+     * @param string $fullnameconfig
+     * @param string $expected
+     * @return void
+     * @covers       \core_renderer::render_user_picture
+     * @dataProvider user_name_provider
+     */
+    public function test_get_initials(array $userdata, string $fullnameconfig, string $expected) {
+        $this->resetAfterTest();
+        // Create a user.
+        $page = new \moodle_page();
+        $page->set_url('/user/profile.php');
+        $page->set_context(\context_system::instance());
+        $renderer = $page->get_renderer('core');
+        $user1 =
+            $this->getDataGenerator()->create_user(
+                array_merge(
+                    ['picture' => 0, 'email' => 'user1@example.com'],
+                    $userdata
+                )
+            );
+        $userpicture = new user_picture($user1);
+        set_config('fullnamedisplay', $fullnameconfig);
+        $userpicturerendered = $renderer->render($userpicture);
+        $this->assertStringContainsString($expected, $userpicturerendered);
+    }
+
+    /**
+     * Provider of user configuration for testing initials rendering
+     *
+     * @return array[]
+     */
+    public function user_name_provider() {
+        return [
+            'simple user' => [
+                'user' => ['firstname' => 'first',  'lastname' => 'last'],
+                'fullnamedisplay' => 'language',
+                'expected' => 'fl'
+            ],
+            'simple user with lastname firstname in language settings' => [
+                'user' => ['firstname' => 'first',  'lastname' => 'last'],
+                'fullnamedisplay' => 'lastname firstname',
+                'expected' => 'lf'
+            ],
+            'simple user with no surname' => [
+                'user' => ['firstname' => '',  'lastname' => 'L'],
+                'fullnamedisplay' => 'language',
+                'expected' => 'L'
+            ],
+            'simple user with a middle name' => [
+                'user' => ['firstname' => 'f',  'lastname' => 'l', 'middlename' => 'm'],
+                'fullnamedisplay' => 'middlename lastname',
+                'expected' => 'ml'
+            ],
+        ];
     }
 
     public function test_empty_menu() {
