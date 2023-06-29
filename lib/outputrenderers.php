@@ -2688,27 +2688,20 @@ class core_renderer extends renderer_base {
 
         // Get the image html output first, auto generated based on initials if one isn't already set.
         if ($user->picture == 0 && empty($CFG->enablegravatar) && !defined('BEHAT_SITE_RUNNING')) {
-            $firstnamefirst = mb_substr($user->firstname, 0, 1);
-            $lastnamefirst = mb_substr($user->lastname, 0, 1);
-            $fullnamedisplay = $CFG->fullnamedisplay;
-            if ($CFG->fullnamedisplay === 'language') {
-                $fullnamedisplay = get_string('fullnamedisplay', '', (object) [
-                    'firstname' => 'firstname',
-                    'lastname' => 'lastname'
-                ]);
+            if (has_capability('moodle/site:viewfullnames', $this->page->context)) {
+                $nameformat = $CFG->alternativefullnameformat;
+            } else {
+                $nameformat = $CFG->fullnamedisplay;
             }
-            $firstnameposition = mb_strpos($fullnamedisplay, 'firstname');
-            $lastnameposition = mb_strpos($fullnamedisplay, 'lastname');
-            $initials = $firstnamefirst . $lastnamefirst;
-            if ($firstnameposition !== false && $lastnameposition !== false) {
-                if ($lastnameposition < $firstnameposition) {
-                    $initials = $lastnamefirst . $firstnamefirst;
-                }
-                // Don't modify if the firstname is first.
-            } else if ($firstnameposition !== false) {
-                $initials = $firstnamefirst;
-            } else if ($lastnameposition !== false) {
-                $initials = $lastnamefirst;
+            if ($nameformat === 'language') {
+                $nameformat = get_string('fullnamedisplay', '',
+                    (object) ['firstname' => 'firstname', 'lastname' => 'lastname']);
+            }
+            // Fetch all the available user name fields.
+            $availablefields = order_in_string(\core_user\fields::get_name_fields(), $nameformat);
+            $initials = '';
+            foreach ($availablefields as $userfieldname) {
+                $initials .= mb_substr($user->$userfieldname, 0, 1);
             }
             // Don't modify in corner cases where neither the firstname nor the lastname appears.
             $output = html_writer::tag('span', $initials,
@@ -2753,6 +2746,7 @@ class core_renderer extends renderer_base {
 
         return html_writer::tag('a', $output, $attributes);
     }
+
 
     /**
      * @deprecated since Moodle 4.3
