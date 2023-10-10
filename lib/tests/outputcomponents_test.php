@@ -378,6 +378,11 @@ class outputcomponents_test extends \advanced_testcase {
                 'fullnamedisplay' => 'middlename lastname',
                 'expected' => 'ml',
             ],
+            'user with a middle name & fullnamedisplay contains 3 names' => [
+                'user' => ['firstname' => 'first',  'lastname' => 'last', 'middlename' => 'middle'],
+                'fullnamedisplay' => 'firstname middlename lastname',
+                'expected' => 'fl'
+            ],
         ];
     }
 

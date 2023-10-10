@@ -2722,6 +2722,10 @@ class core_renderer extends renderer_base {
                     (object) ['firstname' => 'firstname', 'lastname' => 'lastname']
                 );
             }
+            // Remove the verbose middlename if there are all three fields.
+            if (strpos($nameformat, 'middlename') !== false && strpos($nameformat, 'firstname') !== false && strpos($nameformat, 'lastname') !== false) {
+                $nameformat = preg_replace('/(^| )middlename/u', '', $nameformat);
+            }
             // Fetch all the available user name fields.
             $availablefields = order_in_string(\core_user\fields::get_name_fields(), $nameformat);
             $initials = '';
